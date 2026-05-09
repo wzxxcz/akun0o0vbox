@@ -36,7 +36,6 @@ jobs:
           upStream=https://github.com/${{ matrix.userName }}/${{ matrix.repoName }}
           echo "upStream=$upStream" >> $GITHUB_ENV
           commit=$(curl -s "https://api.github.com/repos/${{ matrix.userName }}/${{ matrix.repoName }}/commits/${{ matrix.branchName }}?per_page=1" | jq -r '.sha' )
-          echo "commit=$commit"
           echo "commit=$commit" >> $GITHUB_ENV
           echo "commitS=${commit:0:7}" >> $GITHUB_ENV
 
@@ -76,7 +75,7 @@ RELEASE_KEY_ALIAS=${{ secrets.KEY_ALIAS }}
 RELEASE_STORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}
 RELEASE_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}
 EOF
-          signingConfigs='
+          cat > signingConfigs.txt << 'EOF'
 signingConfigs {
     if (project.hasProperty("RELEASE_STORE_FILE")) {
         myConfig {
@@ -91,14 +90,14 @@ signingConfigs {
         }
     }
 }
-'
-          signingConfig='
+EOF
+          cat > signingConfig.txt << 'EOF'
     if (project.hasProperty("RELEASE_STORE_FILE")) {
         signingConfig signingConfigs.myConfig
     }
-'
-          sed -i -e "/defaultConfig {/i\\$signingConfigs" \
-                 -e "/release {/a\\$signingConfig" app/build.gradle
+EOF
+          sed -i -e "/defaultConfig {/r signingConfigs.txt" \
+                 -e "/release {/r signingConfig.txt" app/build.gradle
 
       - uses: actions/setup-java@v5
         with:
